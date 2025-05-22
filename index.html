@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Classroom Desk Rotation</title>
   <style>
     body {
@@ -39,19 +39,18 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     .ball {
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: bold;
+      overflow: hidden;
+      border: 2px solid white;
+      box-shadow: 0 0 4px rgba(0,0,0,0.3);
     }
-    .prince { background-color: #ff6b6b; }
-    .simon  { background-color: #1dd1a1; }
-    .sanish { background-color: #54a0ff; }
+    .ball img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   </style>
 </head>
 <body>
@@ -62,12 +61,10 @@
     const dateBox = document.getElementById('dateBox');
     const classroom = document.getElementById('classroom');
 
-    // Get today's date and day
     const today = new Date();
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     dateBox.textContent = today.toLocaleDateString(undefined, options);
 
-    // Sequence pattern: [desk number, side student]
     const pattern = [
       [4, 'simon'],
       [0, 'prince'],
@@ -76,20 +73,29 @@
     const index = today.getDate() % pattern.length;
     const [benchIndex, sideStudent] = pattern[index];
 
-    // Initialize desks
+    function createBall(student) {
+      const ball = document.createElement('div');
+      ball.className = 'ball';
+      const img = document.createElement('img');
+      img.src = `${student}.jpg`;
+      img.alt = student;
+      ball.appendChild(img);
+      return ball;
+    }
+
     for (let i = 0; i < 5; i++) {
       const desk = document.createElement('div');
       desk.className = 'desk';
+
       if (i === benchIndex) {
         const students = ['prince', 'simon', 'sanish'];
+
         students.forEach(student => {
-          const ball = document.createElement('div');
-          ball.className = `ball ${student}`;
-          ball.textContent = student.charAt(0).toUpperCase();
           if (student === sideStudent) {
-            desk.appendChild(ball);
+            desk.appendChild(createBall(student));
           }
         });
+
         const centerContainer = document.createElement('div');
         centerContainer.style.display = 'flex';
         centerContainer.style.gap = '5px';
@@ -98,14 +104,13 @@
 
         students.forEach(student => {
           if (student !== sideStudent) {
-            const ball = document.createElement('div');
-            ball.className = `ball ${student}`;
-            ball.textContent = student.charAt(0).toUpperCase();
-            centerContainer.appendChild(ball);
+            centerContainer.appendChild(createBall(student));
           }
         });
+
         desk.insertBefore(centerContainer, desk.children.length === 0 ? null : desk.firstChild);
       }
+
       classroom.appendChild(desk);
     }
   </script>
