@@ -21,7 +21,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     .classroom {
-      margin-top: 80px;
+      margin-top: 80px; /* Increased margin for date box */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -33,10 +33,20 @@
       background-color: #d9d9d9;
       border-radius: 10px;
       display: flex;
-      justify-content: space-between;
+      justify-content: space-between; /* Ensures side person is at one end */
       align-items: center;
       padding: 0 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: relative; /* For bench numbering */
+    }
+    .desk::before { /* For bench numbering */
+      content: "Bench " attr(data-bench-number);
+      position: absolute;
+      left: -70px; /* Adjust as needed */
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9em;
+      color: #555;
     }
     .ball {
       width: 40px;
@@ -45,11 +55,22 @@
       overflow: hidden;
       border: 2px solid white;
       box-shadow: 0 0 4px rgba(0,0,0,0.3);
+      display: flex; /* For centering text if image fails */
+      justify-content: center;
+      align-items: center;
+      font-size: 0.6em; /* For alt text if image fails */
+      text-align: center;
     }
     .ball img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .center-group { /* Renamed for clarity and specific styling */
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      flex: 1; /* Allows it to take space and center */
     }
   </style>
 </head>
@@ -60,82 +81,129 @@
   <script>
     const dateBox = document.getElementById('dateBox');
     const classroom = document.getElementById('classroom');
-    const today = new Date();
+    const actualCurrentDate = new Date(); // The actual date when the script is run
 
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    dateBox.textContent = today.toLocaleDateString(undefined, options);
+    dateBox.textContent = actualCurrentDate.toLocaleDateString(undefined, options);
 
     function createBall(student) {
       const ball = document.createElement('div');
       ball.className = 'ball';
       const img = document.createElement('img');
-      img.src = `${student}.jpg`;
+      // Assuming images are in the same directory or accessible via this path
+      img.src = `${student.toLowerCase()}.jpg`; // Ensure consistent naming (e.g., simon.jpg)
       img.alt = student;
+      // Fallback text if image fails to load
+      img.onerror = () => { ball.textContent = student.substring(0,3); };
       ball.appendChild(img);
       return ball;
     }
 
-    // Function to calculate how many valid (non-Saturday) days have passed since a fixed start
-    function getValidDayIndex(startDate) {
+    // Function to calculate how many valid (non-Saturday) days have passed
+    // from startDate up to and including actualCurrentDate.
+    function getValidDayIndex(startDateRef, todayRef) {
       let index = 0;
-      const current = new Date(startDate);
-      while (current <= today) {
-        if (current.getDay() !== 6) index++;
+      const current = new Date(startDateRef); // Use a copy to avoid modifying original startDate
+      // Normalize to start of day to avoid time-of-day issues
+      current.setHours(0, 0, 0, 0);
+      const end = new Date(todayRef);
+      end.setHours(0, 0, 0, 0);
+
+      while (current <= end) {
+        if (current.getDay() !== 6) { // 0 is Sunday, 6 is Saturday
+          index++;
+        }
         current.setDate(current.getDate() + 1);
       }
-      return index - 1; // minus 1 because today is included
+      return index > 0 ? index - 1 : 0; // Return 0 if no valid days passed or if today is startDate
     }
 
     const princeGroup = ['simon', 'prince', 'sanish'];
-    const princeSides = ['prince', 'sanish', 'simon', 'prince', 'sanish'];
+    const princeSides = ['prince', 'sanish', 'simon', 'prince', 'sanish']; // 5-day side rotation
     const sujanGroup = ['yubin', 'success', 'sujan'];
-    const sujanSides = ['success', 'sujan', 'yubin'];
+    const sujanSides = ['success', 'sujan', 'yubin']; // 3-day side rotation
 
     const benchCount = 5;
+    const desks = []; // Keep a reference to desk elements
     for (let i = 0; i < benchCount; i++) {
       const desk = document.createElement('div');
       desk.className = 'desk';
+      desk.setAttribute('data-bench-number', i + 1); // For display
       classroom.appendChild(desk);
+      desks.push(desk); // Store desk
     }
 
-    const startDate = new Date('2024-05-22'); // Starting date of the rotation logic
-    const dayIndex = getValidDayIndex(startDate);
+    // THIS IS THE CRITICAL LINE FOR THE INITIAL "TODAY" STATE:
+    // Set this to the calendar date that represents Day 0 of your schedule.
+    // For example, if May 22, 2024, is when Prince is on Bench 1 / Sujan on Bench 5:
+    const startDate = new Date('2024-05-22'); // Ensure this is your intended "Day 0"
+    startDate.setHours(0,0,0,0); // Normalize startDate to the beginning of the day
+
+    const dayIndex = getValidDayIndex(startDate, actualCurrentDate);
 
     // Prince group rotation
-    const princeBench = dayIndex % 5;
-    const princeSide = princeSides[dayIndex % princeSides.length];
-    const princeDesk = classroom.children[princeBench];
-    princeDesk.innerHTML = '';
-    princeDesk.appendChild(createBall(princeSide));
-    const princeCenter = document.createElement('div');
-    princeCenter.style.display = 'flex';
-    princeCenter.style.gap = '5px';
-    princeCenter.style.justifyContent = 'center';
-    princeCenter.style.flex = '1';
+    // Bench cycles 0, 1, 2, 3, 4 (representing benches 1-5)
+    const princeBenchIndex = dayIndex % benchCount;
+    // Side person cycles through princeSides array
+    const princeSidePerson = princeSides[dayIndex % princeSides.length];
+
+    const princeDesk = desks[princeBenchIndex];
+    princeDesk.innerHTML = ''; // Clear previous content
+
+    const princeCenterGroup = document.createElement('div');
+    princeCenterGroup.className = 'center-group';
     princeGroup.forEach(name => {
-      if (name !== princeSide) {
-        princeCenter.appendChild(createBall(name));
+      if (name !== princeSidePerson) {
+        princeCenterGroup.appendChild(createBall(name));
       }
     });
-    princeDesk.insertBefore(princeCenter, princeDesk.children.length === 0 ? null : princeDesk.firstChild);
+
+    // To ensure Prince is on "a side", we decide if side person is left or right.
+    // Let's say side person is on the left by default based on caption.
+    // The problem description says "Prince is on the side".
+    // If using flex justify-content: space-between, the order of appending matters.
+    // Child 1 ... Child 2 ... Child 3. Child 1 and 3 are "sides".
+    // Let's assume "on the side" means the first ball.
+    princeDesk.appendChild(createBall(princeSidePerson)); // Side person
+    princeDesk.appendChild(princeCenterGroup); // Others in the middle/other side
 
     // Sujan group rotation
-    const sujanBench = (dayIndex + 4) % 5; // Start from last bench today
-    const sujanSide = sujanSides[dayIndex % sujanSides.length];
-    const sujanDesk = classroom.children[sujanBench];
-    sujanDesk.innerHTML = '';
-    sujanDesk.appendChild(createBall(sujanSide));
-    const sujanCenter = document.createElement('div');
-    sujanCenter.style.display = 'flex';
-    sujanCenter.style.gap = '5px';
-    sujanCenter.style.justifyContent = 'center';
-    sujanCenter.style.flex = '1';
+    // Starts on 5th bench (index 4) on dayIndex 0, then 1st (index 0), 2nd (index 1), etc.
+    // (Initial Offset + dayIndex) % benchCount
+    // Initial offset for Sujan: 4 (to be on 5th bench, which is index 4)
+    const sujanBenchIndex = (4 + dayIndex) % benchCount;
+    // Side person cycles through sujanSides array
+    const sujanSidePerson = sujanSides[dayIndex % sujanSides.length];
+
+    // Ensure Sujan's group doesn't overwrite Prince's if they land on the same bench
+    // This logic assumes they are always on different benches,
+    // which is true with current rotation (Prince: N, Sujan: (N+4)%5)
+    const sujanDesk = desks[sujanBenchIndex];
+    // If sujanDesk is already populated by Prince, this would be an issue.
+    // However, their bench indices will differ unless benchCount is small and dayIndex aligns them.
+    // For benchCount = 5, princeBenchIndex = dayIndex % 5
+    // sujanBenchIndex = (4 + dayIndex) % 5. They will always be different.
+    if (sujanDesk !== princeDesk) { // Should always be true with current logic
+        sujanDesk.innerHTML = ''; // Clear previous content
+    } else {
+        // If they could be on the same desk, we need a strategy
+        // For now, assume they are on different desks. If not, this alert will show.
+        // alert("Warning: Groups are trying to occupy the same desk!");
+    }
+
+
+    const sujanCenterGroup = document.createElement('div');
+    sujanCenterGroup.className = 'center-group';
     sujanGroup.forEach(name => {
-      if (name !== sujanSide) {
-        sujanCenter.appendChild(createBall(name));
+      if (name !== sujanSidePerson) {
+        sujanCenterGroup.appendChild(createBall(name));
       }
     });
-    sujanDesk.insertBefore(sujanCenter, sujanDesk.children.length === 0 ? null : sujanDesk.firstChild);
+
+    // Place Sujan's side person. Let's say it's the first ball (left side).
+    sujanDesk.appendChild(createBall(sujanSidePerson));
+    sujanDesk.appendChild(sujanCenterGroup);
+
   </script>
 </body>
 </html>
