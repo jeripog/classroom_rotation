@@ -60,8 +60,8 @@
   <script>
     const dateBox = document.getElementById('dateBox');
     const classroom = document.getElementById('classroom');
-
     const today = new Date();
+
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     dateBox.textContent = today.toLocaleDateString(undefined, options);
 
@@ -75,48 +75,67 @@
       return ball;
     }
 
-    const princeGroup = ['prince', 'simon', 'sanish'];
-    const sujanGroup = ['sujan', 'success', 'yubin'];
-    const allGroups = [princeGroup, sujanGroup];
-    const groupPatterns = [
-      [[4, 'simon'], [0, 'prince'], [1, 'sanish']], // princeGroup
-      [[4, 'sujan'], [0, 'success'], [1, 'yubin']]  // sujanGroup
-    ];
+    // Function to calculate how many valid (non-Saturday) days have passed since a fixed start
+    function getValidDayIndex(startDate) {
+      let index = 0;
+      const current = new Date(startDate);
+      while (current <= today) {
+        if (current.getDay() !== 6) index++;
+        current.setDate(current.getDate() + 1);
+      }
+      return index - 1; // minus 1 because today is included
+    }
+
+    const princeGroup = ['simon', 'prince', 'sanish'];
+    const princeSides = ['prince', 'sanish', 'simon', 'prince', 'sanish'];
+    const sujanGroup = ['yubin', 'success', 'sujan'];
+    const sujanSides = ['success', 'sujan', 'yubin'];
 
     const benchCount = 5;
-
     for (let i = 0; i < benchCount; i++) {
       const desk = document.createElement('div');
       desk.className = 'desk';
       classroom.appendChild(desk);
     }
 
-    allGroups.forEach((group, groupIndex) => {
-      const pattern = groupPatterns[groupIndex];
-      const patternIndex = today.getDate() % pattern.length;
-      const [benchIndex, sideStudent] = pattern[patternIndex];
+    const startDate = new Date('2024-05-22'); // Starting date of the rotation logic
+    const dayIndex = getValidDayIndex(startDate);
 
-      const desk = classroom.children[benchIndex];
-      desk.innerHTML = '';
-
-      // Side student
-      desk.appendChild(createBall(sideStudent));
-
-      // Center students
-      const center = document.createElement('div');
-      center.style.display = 'flex';
-      center.style.gap = '5px';
-      center.style.justifyContent = 'center';
-      center.style.flex = '1';
-
-      group.forEach(student => {
-        if (student !== sideStudent) {
-          center.appendChild(createBall(student));
-        }
-      });
-
-      desk.insertBefore(center, desk.children.length === 0 ? null : desk.firstChild);
+    // Prince group rotation
+    const princeBench = dayIndex % 5;
+    const princeSide = princeSides[dayIndex % princeSides.length];
+    const princeDesk = classroom.children[princeBench];
+    princeDesk.innerHTML = '';
+    princeDesk.appendChild(createBall(princeSide));
+    const princeCenter = document.createElement('div');
+    princeCenter.style.display = 'flex';
+    princeCenter.style.gap = '5px';
+    princeCenter.style.justifyContent = 'center';
+    princeCenter.style.flex = '1';
+    princeGroup.forEach(name => {
+      if (name !== princeSide) {
+        princeCenter.appendChild(createBall(name));
+      }
     });
+    princeDesk.insertBefore(princeCenter, princeDesk.children.length === 0 ? null : princeDesk.firstChild);
+
+    // Sujan group rotation
+    const sujanBench = (dayIndex + 4) % 5; // Start from last bench today
+    const sujanSide = sujanSides[dayIndex % sujanSides.length];
+    const sujanDesk = classroom.children[sujanBench];
+    sujanDesk.innerHTML = '';
+    sujanDesk.appendChild(createBall(sujanSide));
+    const sujanCenter = document.createElement('div');
+    sujanCenter.style.display = 'flex';
+    sujanCenter.style.gap = '5px';
+    sujanCenter.style.justifyContent = 'center';
+    sujanCenter.style.flex = '1';
+    sujanGroup.forEach(name => {
+      if (name !== sujanSide) {
+        sujanCenter.appendChild(createBall(name));
+      }
+    });
+    sujanDesk.insertBefore(sujanCenter, sujanDesk.children.length === 0 ? null : sujanDesk.firstChild);
   </script>
 </body>
 </html>
