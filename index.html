@@ -28,7 +28,7 @@
       gap: 20px;
     }
     .desk {
-      width: 300px;
+      width: 320px;
       height: 60px;
       background-color: #d9d9d9;
       border-radius: 10px;
@@ -65,14 +65,6 @@
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     dateBox.textContent = today.toLocaleDateString(undefined, options);
 
-    const pattern = [
-      [4, 'simon'],
-      [0, 'prince'],
-      [1, 'sanish']
-    ];
-    const index = today.getDate() % pattern.length;
-    const [benchIndex, sideStudent] = pattern[index];
-
     function createBall(student) {
       const ball = document.createElement('div');
       ball.className = 'ball';
@@ -83,36 +75,48 @@
       return ball;
     }
 
-    for (let i = 0; i < 5; i++) {
+    const princeGroup = ['prince', 'simon', 'sanish'];
+    const sujanGroup = ['sujan', 'success', 'yubin'];
+    const allGroups = [princeGroup, sujanGroup];
+    const groupPatterns = [
+      [[4, 'simon'], [0, 'prince'], [1, 'sanish']], // princeGroup
+      [[4, 'sujan'], [0, 'success'], [1, 'yubin']]  // sujanGroup
+    ];
+
+    const benchCount = 5;
+
+    for (let i = 0; i < benchCount; i++) {
       const desk = document.createElement('div');
       desk.className = 'desk';
-
-      if (i === benchIndex) {
-        const students = ['prince', 'simon', 'sanish'];
-
-        students.forEach(student => {
-          if (student === sideStudent) {
-            desk.appendChild(createBall(student));
-          }
-        });
-
-        const centerContainer = document.createElement('div');
-        centerContainer.style.display = 'flex';
-        centerContainer.style.gap = '5px';
-        centerContainer.style.justifyContent = 'center';
-        centerContainer.style.flex = '1';
-
-        students.forEach(student => {
-          if (student !== sideStudent) {
-            centerContainer.appendChild(createBall(student));
-          }
-        });
-
-        desk.insertBefore(centerContainer, desk.children.length === 0 ? null : desk.firstChild);
-      }
-
       classroom.appendChild(desk);
     }
+
+    allGroups.forEach((group, groupIndex) => {
+      const pattern = groupPatterns[groupIndex];
+      const patternIndex = today.getDate() % pattern.length;
+      const [benchIndex, sideStudent] = pattern[patternIndex];
+
+      const desk = classroom.children[benchIndex];
+      desk.innerHTML = '';
+
+      // Side student
+      desk.appendChild(createBall(sideStudent));
+
+      // Center students
+      const center = document.createElement('div');
+      center.style.display = 'flex';
+      center.style.gap = '5px';
+      center.style.justifyContent = 'center';
+      center.style.flex = '1';
+
+      group.forEach(student => {
+        if (student !== sideStudent) {
+          center.appendChild(createBall(student));
+        }
+      });
+
+      desk.insertBefore(center, desk.children.length === 0 ? null : desk.firstChild);
+    });
   </script>
 </body>
 </html>
